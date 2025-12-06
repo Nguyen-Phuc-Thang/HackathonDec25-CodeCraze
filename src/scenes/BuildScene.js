@@ -1,3 +1,11 @@
+import { db } from "../firebase/firebaseConfig.js";
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
 import Phaser from "phaser";
 import HotbarUI from "../ui/HotbarUI.js";
 import InventoryUI from "../ui/InventoryUI.js";
@@ -9,6 +17,39 @@ export default class BuildScene extends Phaser.Scene {
     super("BuildScene");
   }
 
+  async loadInventoryFromDB() {
+    const userRef = doc(db, "users", this.userId);
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists()) {
+      console.warn("User not found:", this.userId);
+      this.inventoryUI.setItems([]);
+      return;
+    }
+
+    const data = snap.data();
+    const inventory = data.inventory || [];
+
+    this.inventoryUI.setItems(inventory);
+  }
+
+  setupInventoryRealtime() {
+    const userRef = doc(db, "users", this.userId);
+
+    onSnapshot(userRef, (snap) => {
+      if (!snap.exists()) return;
+
+      const data = snap.data();
+      const inventory = data.inventory || [];
+
+      this.inventoryUI.setItems(inventory);
+    });
+  }
+  init(data) {
+    this.userId = data.userId;
+    console.log("Loaded userId:", this.userId);
+  }
+
   create() {
     this.cameras.main.setBackgroundColor(0xaecbff);
 
@@ -16,25 +57,15 @@ export default class BuildScene extends Phaser.Scene {
 
     this.hotbarUI = new HotbarUI(this, this.itemSystem);
     this.inventoryUI = new InventoryUI(this, this.itemSystem, this.hotbarUI);
-    this.inventoryUI.setItems([
-      { type: "grass",       count: 10 },
-      { type: "dirt",        count: 10 },
-      { type: "stone",       count: 10 },
-      { type: "oak_planks",  count: 10 },
-      { type: "oak_wood",    count: 10 },
-      { type: "obsidian",    count: 10 },
-      { type: "bricks",      count: 10 },
-      { type: "sand",        count: 10 },
-      { type: "TNT",         count: 10 },
-      { type: "grass",       count: 10 }
-    ]);
-
+    console.log("Fetching inventory for userId:", this.userId);
+    this.loadInventoryFromDB();
+    this.setupInventoryRealtime();
 
 
     this.itemSystem.registerHotbarUI(this.hotbarUI);
     this.itemSystem.registerInventoryUI(this.inventoryUI);
     this.blockBuildUI = new BlockBuildUI(this, this.hotbarUI);
-
+    
     this.currentTool = "build";
 
     this.hotbarUI.buildButton.on("pointerdown", () => {

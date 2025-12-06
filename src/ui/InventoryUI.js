@@ -168,46 +168,46 @@ export default class InventoryUI {
   }
 
   setInventoryVisible(show) {
-  this.inventoryPanel.setVisible(show);
+    this.inventoryPanel.setVisible(show);
 
-  for (let i = 0; i < this.inventoryItems.length; i++) {
-    const icon = this.inventoryItems[i];
-    if (icon.location === "inventory") {
-      icon.setVisible(show);
-      if (icon.countText) icon.countText.setVisible(show);
+    for (let i = 0; i < this.inventoryItems.length; i++) {
+      const icon = this.inventoryItems[i];
+      if (icon.location === "inventory") {
+        icon.setVisible(show);
+        if (icon.countText) icon.countText.setVisible(show);
+      }
+    }
+
+    this.inventorySelection.setVisible(show);
+
+    if (show && this.inventoryItems.length > 0) {
+      this.selectInventorySlot(
+        this.inventoryItems[0].invRow,
+        this.inventoryItems[0].invCol
+      );
     }
   }
 
-  this.inventorySelection.setVisible(show);
-
-  if (show && this.inventoryItems.length > 0) {
-    this.selectInventorySlot(
-      this.inventoryItems[0].invRow,
-      this.inventoryItems[0].invCol
-    );
-  }
-}
-
 
   setItems(items) {
-  // clear old icons + text
-  for (let i = 0; i < this.inventoryItems.length; i++) {
-    const icon = this.inventoryItems[i];
-    if (icon.countText) icon.countText.destroy();
-    icon.destroy();
-  }
-  this.inventoryItems = [];
+    // clear old icons + text
+    for (let i = 0; i < this.inventoryItems.length; i++) {
+      const icon = this.inventoryItems[i];
+      if (icon.countText) icon.countText.destroy();
+      icon.destroy();
+    }
+    this.inventoryItems = [];
 
-  const maxSlots = this.invRows * this.invCols;
-  const count = Math.min(items.length, maxSlots);
+    const maxSlots = this.invRows * this.invCols;
+    const count = Math.min(items.length, maxSlots);
 
-  for (let i = 0; i < count; i++) {
-    const item = items[i];        
-    const row = Math.floor(i / this.invCols);
-    const col = i % this.invCols;
-    this.createIcon(row, col, item.type, item.count);
+    for (let i = 0; i < count; i++) {
+      const item = items[i];
+      const row = Math.floor(i / this.invCols);
+      const col = i % this.invCols;
+      this.createIcon(row, col, item.type, item.count);
+    }
   }
-}
 
 
   isOpen() {

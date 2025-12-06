@@ -26,6 +26,16 @@ export default class PreloadScene extends Phaser.Scene {
   }
 
   create() {
-    this.scene.start("BuildScene");
+
+    async function loadInventoryFromDB() {
+      const userRef = doc(db, "users", this.userId);
+
+      const snap = await getDoc(userRef);
+      const inv = snap.data().inventory || [];
+
+      this.inventoryUI.setItems(inv);
+    }
+    const userId = "demoUser";
+    this.scene.start("BuildScene", { userId });
   }
 }
