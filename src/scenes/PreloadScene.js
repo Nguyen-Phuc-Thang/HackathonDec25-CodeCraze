@@ -26,7 +26,7 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image("bricks", "assets/blocks/bricks.png");
     this.load.image("sand", "assets/blocks/sand.png");
     this.load.image("TNT", "assets/blocks/TNT.png");
-    
+    this.load.font('Minecraft', 'assets/fonts/Minecraft.ttf');
   }
 
   create() {

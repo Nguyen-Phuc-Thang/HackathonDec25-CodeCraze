@@ -132,9 +132,10 @@ export default class BuildScene extends Phaser.Scene {
       hoverColor: 0x3498db,
       textColor: '#ecf0f1',
       successColor: 0x27ae60,
-      font: '16px Arial',
+      font: '16px "Minecraft"',
       cornerRadius: 10
     };
+
 
     this.createMoneyUI();
     this.createMapUI();
@@ -143,16 +144,17 @@ export default class BuildScene extends Phaser.Scene {
       this.input.mouse.disableContextMenu();
     }
 
-    this.itemSystem = new ItemSystem(this);
+  
+    this.loadInventoryFromDB();
+
+      this.itemSystem = new ItemSystem(this);
     this.hotbarUI = new HotbarUI(this, this.itemSystem);
     this.inventoryUI = new InventoryUI(this, this.itemSystem, this.hotbarUI);
     this.blockBuildUI = new BlockBuildUI(this, this.hotbarUI);
 
-    this.loadInventoryFromDB();
-
     this.itemSystem.registerHotbarUI(this.hotbarUI);
     this.itemSystem.registerInventoryUI(this.inventoryUI);
-
+    
     this.blockBuildUI.onCellClick = async ({ x, y, type }) => {
       const tool = this.hotbarUI.currentTool || "build";
 
@@ -229,7 +231,7 @@ export default class BuildScene extends Phaser.Scene {
 
     this.moneyText = this.add
       .text(this.scale.width - padding, padding, `$${this.money}`, {
-        fontFamily: "Arial",
+        fontFamily: "Minecraft",
         fontSize: "24px",
         color: "#FFD700",
         stroke: "#000",
@@ -265,7 +267,7 @@ export default class BuildScene extends Phaser.Scene {
     this.mapHeaderContainer.add(this.mapDropdownLabel);
 
     this.arrowIcon = this.add.text(width - 25, height / 2, '▼', {
-      font: '14px Arial',
+      font: '14px Minecraft',
       color: this.uiStyle.textColor
     }).setOrigin(0.5);
     this.mapHeaderContainer.add(this.arrowIcon);
@@ -415,7 +417,7 @@ export default class BuildScene extends Phaser.Scene {
     newMapRow.add(newMapBg);
 
     const plusIcon = this.add.text(15, itemHeight/2, '+', {
-        font: 'bold 20px Arial',
+        font: 'bold 20px Minecraft',
         color: '#2ecc71'
     }).setOrigin(0, 0.5);
     

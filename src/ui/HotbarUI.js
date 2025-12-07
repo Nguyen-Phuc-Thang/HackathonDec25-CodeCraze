@@ -1,4 +1,9 @@
 export default class HotbarUI {
+
+  preload() {
+
+  }
+
   constructor(scene, itemSystem) {
     this.scene = scene;
     this.itemSystem = itemSystem;
@@ -114,8 +119,7 @@ export default class HotbarUI {
 
     this.buildModeLabel = scene.add
       .text(0, 0, "BUILD", {
-        fontFamily: "Arial",
-        fontSize: "18px",
+        font: '16px "Minecraft"',
         color: "#ffffff"
       })
       .setOrigin(0.5);
@@ -172,8 +176,7 @@ export default class HotbarUI {
 
     this.inventoryLabel = scene.add
       .text(0, 0, "INVENTORY", {
-        fontFamily: "Arial",
-        fontSize: "16px",
+        font: '16px "Minecraft"',
         color: "#ffffff"
       })
       .setOrigin(0.5);
@@ -182,7 +185,8 @@ export default class HotbarUI {
     this.inventoryButton.setSize(this.inventoryBtnWidth, this.inventoryBtnHeight);
     this.inventoryButton.setInteractive({ useHandCursor: true });
 
-    this._redrawInventoryButton(false);
+    this._redrawInventoryButton(false, "INVENTORY");
+
 
     this.selectSlot(0);
   }
@@ -206,7 +210,7 @@ export default class HotbarUI {
     this.buildModeLabel.setText(this.isBuildMode ? "BUILD" : "REMOVE");
   }
 
-  _redrawInventoryButton(active) {
+  _redrawInventoryButton(active, inventoryText) {
     if (!this.inventoryBg) return;
 
     const g = this.inventoryBg;
@@ -221,10 +225,12 @@ export default class HotbarUI {
     g.fillStyle(bgColor, 1);
     g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
     g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+
+    this.inventoryLabel.setText(inventoryText);
   }
 
   setInventoryButtonActive(active) {
-    this._redrawInventoryButton(active);
+    this._redrawInventoryButton(active, "INVENTORY");
   }
 
 
@@ -280,7 +286,7 @@ export default class HotbarUI {
         if (!textObj) {
           textObj = this.scene.add
             .text(textX, textY, String(item.count), {
-              fontFamily: "Arial",
+              fontFamily: "Minecraft",
               fontSize: "14px",
               color: "#ffffff"
             })
@@ -301,5 +307,9 @@ export default class HotbarUI {
         }
       }
     }
+  }
+
+  create() {
+    
   }
 }

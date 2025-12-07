@@ -1,8 +1,20 @@
 export default class InventoryUI {  
-      constructor(scene, itemSystem, hotbarUI) {
+
+  
+    constructor(scene, itemSystem, hotbarUI) {
     this.scene = scene;
     this.itemSystem = itemSystem;
     this.hotbarUI = hotbarUI;
+
+    this.uiStyle = {
+      baseColor: 0x2c3e50,
+      accentColor: 0x34495e,
+      hoverColor: 0x3498db,
+      textColor: '#ecf0f1',
+      successColor: 0x27ae60,
+      font: '16px "Minecraft"',
+      cornerRadius: 10
+    };
 
     const width = scene.scale.width;
     const height = scene.scale.height;
@@ -77,8 +89,7 @@ export default class InventoryUI {
 
     this.buyPriceText = scene.add
       .text(0, -8, "$ 0", {
-        fontFamily: "Arial",
-        fontSize: "16px",
+        font: this.uiStyle.font,
         color: "#ffffff"
       })
       .setOrigin(0.5)
@@ -86,8 +97,7 @@ export default class InventoryUI {
 
     this.buyLabelText = scene.add
       .text(0, 14, "BUY", {
-        fontFamily: "Arial",
-        fontSize: "16px",
+        font: this.uiStyle.font,
         color: "#ffffff"
       })
       .setOrigin(0.5)
@@ -96,7 +106,7 @@ export default class InventoryUI {
     this.buyButton.add([buyBg, this.buyPriceText, this.buyLabelText]);
     this.buyButton.setSize(buyWidth, buyHeight);
     this.buyButton.setInteractive({ useHandCursor: true });
-
+   // this.buyButton.setText("BUY");
 
     const invRows = 3;
     const invCols = 14;
@@ -152,7 +162,7 @@ export default class InventoryUI {
           y + self.invSlotHeight / 2 - 4,
           String(count),
           {
-            fontFamily: "Arial",
+            fontFamily: "Minecraft",
             fontSize: "14px",
             color: "#ffffff"
           }
@@ -274,6 +284,4 @@ export default class InventoryUI {
       this.buyLabelText.setText("BUY");
     }
   }
-
-
 }
