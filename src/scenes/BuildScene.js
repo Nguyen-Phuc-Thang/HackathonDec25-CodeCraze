@@ -3,7 +3,8 @@ import {
   doc,
   getDoc,
   onSnapshot,
-  updateDoc
+  updateDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 import Phaser from "phaser";
@@ -24,40 +25,59 @@ export default class BuildScene extends Phaser.Scene {
     const snap = await getDoc(userRef);
 
     if (!snap.exists()) {
-      console.warn("User not found:", this.userId);
-      this.inventoryData = [];
-      this.money = 0;
-      this.inventoryUI.setItems([]);
+      const defaultMap = this.blockBuildUI.getMapData();
+
+      const newData = {
+        inventory: [],
+        money: 0,
+        map: defaultMap
+      };
+
+      try {
+        await setDoc(userRef, newData);
+      } catch (err) {
+        console.error("Failed to create user doc:", err);
+      }
+
+      this.inventoryData = newData.inventory;
+      this.money = newData.money;
+      this.inventoryUI.setItems(this.inventoryData);
+      this.updateMoneyUI();
       return;
     }
 
     const data = snap.data();
+
     this.inventoryData = data.inventory || [];
     this.money = data.money ?? 0;
+    this.inventoryUI.setItems(this.inventoryData);
     this.updateMoneyUI();
 
-    console.log("Loaded inventory for userId:", this.userId, this.inventoryData, "Money:", this.money);
-
-    this.inventoryUI.setItems(this.inventoryData);
+    if (data.map) {
+      this.blockBuildUI.loadMapData(data.map);
+    } else {
+      const defaultMap = this.blockBuildUI.getMapData();
+      try {
+        await updateDoc(userRef, { map: defaultMap });
+      } catch (err) {
+        console.error("Failed to save default map:", err);
+      }
+    }
   }
-
 
   setupInventoryRealtime() {
     const userRef = doc(db, "users", this.userId);
 
     onSnapshot(userRef, (snap) => {
       if (!snap.exists()) return;
-
       const data = snap.data();
       this.inventoryData = data.inventory || [];
-
       this.inventoryUI.setItems(this.inventoryData);
     });
   }
 
   init(data) {
     this.userId = data.userId;
-    console.log("Loaded userId:", this.userId);
   }
 
   create() {
@@ -69,43 +89,52 @@ export default class BuildScene extends Phaser.Scene {
     }
 
     this.itemSystem = new ItemSystem(this);
-
     this.hotbarUI = new HotbarUI(this, this.itemSystem);
     this.inventoryUI = new InventoryUI(this, this.itemSystem, this.hotbarUI);
-
-    console.log("Fetching inventory for userId:", this.userId);
-    this.loadInventoryFromDB();
-    this.itemSystem.registerHotbarUI(this.hotbarUI);
-    this.itemSystem.registerInventoryUI(this.inventoryUI);
     this.blockBuildUI = new BlockBuildUI(this, this.hotbarUI);
 
-    if (!this.inventoryUI.isOpen()) {
-      this.blockBuildUI.onCellClick = async ({ x, y, type }) => {
-        const tool = this.hotbarUI.currentTool || "build";
+    this.loadInventoryFromDB();
 
-        if (tool === "build") {
-          const selectedItem = this.hotbarUI.getSelectedItem();
+    this.itemSystem.registerHotbarUI(this.hotbarUI);
+    this.itemSystem.registerInventoryUI(this.inventoryUI);
 
-          if (!selectedItem || selectedItem.count <= 0) return;
+    this.blockBuildUI.onCellClick = async ({ x, y, type }) => {
+      const tool = this.hotbarUI.currentTool || "build";
 
-          if (!type) {
-            this.blockBuildUI.placeBlock(x, y, selectedItem.type);
+      if (tool === "build") {
+        const selectedItem = this.hotbarUI.getSelectedItem();
+        if (!selectedItem || selectedItem.count <= 0) return;
 
-            selectedItem.count -= 1;
-            this.inventoryUI.refreshCounts();
-            this.hotbarUI.refreshCounts();
+        if (!type) {
+          this.blockBuildUI.placeBlock(x, y, selectedItem.type);
+          selectedItem.count -= 1;
 
-            try {
-              const userRef = doc(db, "users", this.userId);
-              await updateDoc(userRef, { inventory: this.inventoryData });
-            } catch (err) {
-              console.error("Failed to update inventory in Firestore:", err);
-            }
+          this.inventoryUI.refreshCounts();
+          this.hotbarUI.refreshCounts();
+
+          const userRef = doc(db, "users", this.userId);
+          try {
+            await updateDoc(userRef, {
+              inventory: this.inventoryData,
+              map: this.blockBuildUI.getMapData()
+            });
+          } catch (err) {
+            console.error("Failed to update inventory/map:", err);
           }
-        } else if (tool === "remove") {
-          this.blockBuildUI.removeBlock(x, y);
         }
-      };
+      } else if (tool === "remove") {
+        const removed = this.blockBuildUI.removeBlock(x, y);
+        if (removed) {
+          const userRef = doc(db, "users", this.userId);
+          try {
+            await updateDoc(userRef, {
+              map: this.blockBuildUI.getMapData()
+            });
+          } catch (err) {
+            console.error("Failed to update map:", err);
+          }
+        }
+      }
     };
 
     this.inventoryUI.buyButton.on("pointerdown", async () => {
@@ -113,20 +142,17 @@ export default class BuildScene extends Phaser.Scene {
       if (!selectedItem) return;
 
       const price = selectedItem.price ?? 0;
-      if (this.money < price || price <= 0) {
-        console.log("Not enough money or invalid price");
-        return;
-      }
+      if (this.money < price || price <= 0) return;
 
       this.money -= price;
-      this.updateMoneyUI();
       selectedItem.count += 1;
 
+      this.updateMoneyUI();
       this.inventoryUI.refreshCounts();
       this.hotbarUI.refreshCounts();
 
+      const userRef = doc(db, "users", this.userId);
       try {
-        const userRef = doc(db, "users", this.userId);
         await updateDoc(userRef, {
           money: this.money,
           inventory: this.inventoryData
@@ -135,35 +161,27 @@ export default class BuildScene extends Phaser.Scene {
         console.error("Failed to update money/inventory:", err);
       }
     });
-
   }
 
   createMoneyUI() {
-  const padding = 16;
+    const padding = 16;
 
-  this.moneyText = this.add.text(
-    this.scale.width - padding,
-    padding,
-    `$${this.money}`,
-    {
-      fontFamily: "Arial",
-      fontSize: "24px",
-      color: "#FFD700",
-      stroke: "#000",
-      strokeThickness: 4
-    }
-  )
-  .setOrigin(1, 0)  
-  .setScrollFactor(0) 
-  .setDepth(1000);   
-}
+    this.moneyText = this.add
+      .text(this.scale.width - padding, padding, `$${this.money}`, {
+        fontFamily: "Arial",
+        fontSize: "24px",
+        color: "#FFD700",
+        stroke: "#000",
+        strokeThickness: 4
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(1000);
+  }
 
   updateMoneyUI() {
-  if (this.moneyText) {
-    this.moneyText.setText(`$${this.money}`);
+    if (this.moneyText) {
+      this.moneyText.setText(`$${this.money}`);
+    }
   }
-}
-
-  
-
 }
