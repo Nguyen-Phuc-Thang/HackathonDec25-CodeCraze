@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 import BuildScene from "./scenes/BuildScene.js";
 import PreloadScene from "./scenes/PreloadScene.js";
+import PomodoroScene from "./scenes/PomodoroScene.js";
+import LoginScene from "./scenes/LoginScene.js";
+import SignUpScene from "./scenes/SignUpScene.js";
 
 const config = {
   type: Phaser.AUTO,
@@ -12,7 +15,10 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [PreloadScene, BuildScene],
+  dom: {
+    createContainer: true,
+  },
+  scene: [PomodoroScene],
 };
 
 
