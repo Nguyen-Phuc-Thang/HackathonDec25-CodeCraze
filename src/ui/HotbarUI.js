@@ -66,6 +66,11 @@ export default class HotbarUI {
       zone.on("pointerdown", () => {
         this.selectSlot(zone.slotIndex);
         this.itemSystem.handleHotbarClick(zone.slotIndex);
+
+        const selectedItem = this.getSelectedItem();
+        const price = selectedItem?.price ?? 0;
+
+        this.scene.inventoryUI.updateBuyButtonLabel(price);
       });
 
       this.hotbarSlots.push(zone);
@@ -89,60 +94,139 @@ export default class HotbarUI {
     const firstBtnX = width - rightMargin - totalBtnWidth + btnWidth / 2 - 20;
     const btnY = barY;
 
-    this.buildFrames = [
-      "build_button1",
-      "build_button4"
-    ];
+    this.modeBtnWidth = 120;
+    this.modeBtnHeight = 40;
+    this.modeBtnRadius = 10;
+
+    this.inventoryBtnWidth = 160;
+    this.inventoryBtnHeight = 40;
+    this.inventoryBtnRadius = 10;
 
     this.isBuildMode = true;
     this.currentTool = "build";
-    this.isAnimatingMode = false;
 
     this.buildModeButton = scene.add
-      .image(firstBtnX, btnY, this.buildFrames[0])
-      .setOrigin(0.5)
-      .setScale(btnScale * 30)
-      .setInteractive({ useHandCursor: true })
+      .container(firstBtnX, btnY)
       .setDepth(2);
+
+    const buildBg = scene.add.graphics();
+    this.buildModeBg = buildBg;
+
+    this.buildModeLabel = scene.add
+      .text(0, 0, "BUILD", {
+        fontFamily: "Arial",
+        fontSize: "18px",
+        color: "#ffffff"
+      })
+      .setOrigin(0.5);
+
+    this.buildModeButton.add([buildBg, this.buildModeLabel]);
+    this.buildModeButton.setSize(this.modeBtnWidth, this.modeBtnHeight);
+    this.buildModeButton.setInteractive({ useHandCursor: true });
+
+    this._redrawBuildModeButton();
 
     this.buildModeButton.on("pointerdown", () => {
-      if (this.isAnimatingMode) return;
-      this.isAnimatingMode = true;
-
-      const frames = this.isBuildMode
-        ? this.buildFrames
-        : [...this.buildFrames].reverse();
-
-      let fIndex = 0;
-
-      this.scene.time.addEvent({
-        delay: 10,
-        repeat: frames.length - 1,
-        callback: () => {
-          this.buildModeButton.setTexture(frames[fIndex]);
-          fIndex++;
-
-          if (fIndex >= frames.length) {
-            this.isAnimatingMode = false;
-            this.isBuildMode = !this.isBuildMode;
-            this.currentTool = this.isBuildMode ? "build" : "remove";
-          }
-        }
-      });
+      this.isBuildMode = !this.isBuildMode;
+      this.currentTool = this.isBuildMode ? "build" : "remove";
+      this._redrawBuildModeButton();
     });
 
+    this.buildModeButton.on("pointerover", () => {
+      buildBg.clear();
+      buildBg.lineStyle(2, 0xffffff, 1);
+      const color = this.isBuildMode ? 0x27ae60 : 0xc0392b;
+      buildBg.fillStyle(color + 0x202020, 1);
+      buildBg.fillRoundedRect(-this.modeBtnWidth / 2, -this.modeBtnHeight / 2, this.modeBtnWidth, this.modeBtnHeight, this.modeBtnRadius);
+      buildBg.strokeRoundedRect(-this.modeBtnWidth / 2, -this.modeBtnHeight / 2, this.modeBtnWidth, this.modeBtnHeight, this.modeBtnRadius);
+    });
 
+    this.buildModeButton.on("pointerout", () => {
+      this._redrawBuildModeButton();
+    });
 
+    const inventoryBtnX = firstBtnX + this.inventoryBtnWidth + gap + 40;
 
     this.inventoryButton = scene.add
-      .image(firstBtnX + (btnWidth + gap) * 1.8, btnY, "inventory_button")
-      .setOrigin(0.5)
-      .setScale(btnScale * 15)
-      .setInteractive({ useHandCursor: true })
+      .container(inventoryBtnX, btnY)
       .setDepth(2);
+
+    this.inventoryButton.on("pointerover", () => {
+      invBg.clear();
+      invBg.lineStyle(2, 0xffffff, 1);
+      invBg.fillStyle(0x95a5a6, 1);
+      invBg.fillRoundedRect(-this.inventoryBtnWidth / 2, -this.inventoryBtnHeight / 2, this.inventoryBtnWidth, this.inventoryBtnHeight, this.inventoryBtnRadius);
+      invBg.strokeRoundedRect(-this.inventoryBtnWidth / 2, -this.inventoryBtnHeight / 2, this.inventoryBtnWidth, this.inventoryBtnHeight, this.inventoryBtnRadius);
+    });
+
+    this.inventoryButton.on("pointerout", () => {
+      invBg.clear();
+      invBg.lineStyle(2, 0xffffff, 1);
+      invBg.fillStyle(0x7f8c8d, 1);
+      invBg.fillRoundedRect(-this.inventoryBtnWidth / 2, -this.inventoryBtnHeight / 2, this.inventoryBtnWidth, this.inventoryBtnHeight, this.inventoryBtnRadius);
+      invBg.strokeRoundedRect(-this.inventoryBtnWidth / 2, -this.inventoryBtnHeight / 2, this.inventoryBtnWidth, this.inventoryBtnHeight, this.inventoryBtnRadius);
+    });
+
+    const invBg = scene.add.graphics();
+    this.inventoryBg = invBg;
+
+    this.inventoryLabel = scene.add
+      .text(0, 0, "INVENTORY", {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        color: "#ffffff"
+      })
+      .setOrigin(0.5);
+
+    this.inventoryButton.add([invBg, this.inventoryLabel]);
+    this.inventoryButton.setSize(this.inventoryBtnWidth, this.inventoryBtnHeight);
+    this.inventoryButton.setInteractive({ useHandCursor: true });
+
+    this._redrawInventoryButton(false);
 
     this.selectSlot(0);
   }
+
+  _redrawBuildModeButton() {
+    if (!this.buildModeBg) return;
+
+    const g = this.buildModeBg;
+    const w = this.modeBtnWidth;
+    const h = this.modeBtnHeight;
+    const r = this.modeBtnRadius;
+
+    const color = this.isBuildMode ? 0x2ecc71 : 0xe74c3c;
+
+    g.clear();
+    g.lineStyle(2, 0xffffff, 1);
+    g.fillStyle(color, 1);
+    g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
+    g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+
+    this.buildModeLabel.setText(this.isBuildMode ? "BUILD" : "REMOVE");
+  }
+
+  _redrawInventoryButton(active) {
+    if (!this.inventoryBg) return;
+
+    const g = this.inventoryBg;
+    const w = this.inventoryBtnWidth;
+    const h = this.inventoryBtnHeight;
+    const r = this.inventoryBtnRadius;
+
+    const bgColor = active ? 0x95a5a6 : 0x7f8c8d;
+
+    g.clear();
+    g.lineStyle(2, 0xffffff, 1);
+    g.fillStyle(bgColor, 1);
+    g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
+    g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+  }
+
+  setInventoryButtonActive(active) {
+    this._redrawInventoryButton(active);
+  }
+
 
   selectSlot(index) {
     const n = this.numSlots;

@@ -1,5 +1,5 @@
-export default class InventoryUI {
-  constructor(scene, itemSystem, hotbarUI) {
+export default class InventoryUI {  
+      constructor(scene, itemSystem, hotbarUI) {
     this.scene = scene;
     this.itemSystem = itemSystem;
     this.hotbarUI = hotbarUI;
@@ -41,17 +41,62 @@ export default class InventoryUI {
       .setDepth(3);
 
     const buyX =
-  
-    this.invX + (this.invWidth * this.invScale) / 2 + 220; 
-    const buyY = this.hotbarUI.barY - this.hotbarUI.slotHeight - 50; 
+      this.invX + (this.invWidth * this.invScale) / 2 + 220;
+    const buyY = this.hotbarUI.barY - this.hotbarUI.slotHeight - 50;
+
+    const buyWidth = 150;
+    const buyHeight = 100;
+    const buyRadius = 20;
 
     this.buyButton = scene.add
-      .image(buyX, buyY, "buy_button") 
-      .setOrigin(0.5)
-      .setScale(this.invScale * 25)  
-      .setInteractive({ useHandCursor: true })
+      .container(buyX, buyY)
       .setDepth(4)
-      .setVisible(false);  
+      .setVisible(false);
+
+    const buyBg = scene.add.graphics();
+    buyBg.lineStyle(2, 0xffffff, 1);
+    buyBg.fillStyle(0x7f8c8d, 1);
+    buyBg.fillRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
+    buyBg.strokeRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
+
+    this.buyButton.on("pointerover", () => {
+      buyBg.clear();
+      buyBg.lineStyle(2, 0xffffff, 1);
+      buyBg.fillStyle(0x95a5a6, 1);
+      buyBg.fillRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
+      buyBg.strokeRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
+    });
+
+    this.buyButton.on("pointerout", () => {
+      buyBg.clear();
+      buyBg.lineStyle(2, 0xffffff, 1);
+      buyBg.fillStyle(0x7f8c8d, 1);
+      buyBg.fillRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
+      buyBg.strokeRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
+    });
+
+    this.buyPriceText = scene.add
+      .text(0, -8, "$ 0", {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        color: "#ffffff"
+      })
+      .setOrigin(0.5)
+      .setDepth(5);
+
+    this.buyLabelText = scene.add
+      .text(0, 14, "BUY", {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        color: "#ffffff"
+      })
+      .setOrigin(0.5)
+      .setDepth(5);
+
+    this.buyButton.add([buyBg, this.buyPriceText, this.buyLabelText]);
+    this.buyButton.setSize(buyWidth, buyHeight);
+    this.buyButton.setInteractive({ useHandCursor: true });
+
 
     const invRows = 3;
     const invCols = 14;
@@ -131,7 +176,12 @@ export default class InventoryUI {
       icon.on("pointerdown", function (pointer) {
         if (pointer.leftButtonDown()) {
           self.itemSystem.handleInventoryLeftClick(this);
-        } else {
+
+          const selected =
+            self.hotbarUI.getSelectedItem && self.hotbarUI.getSelectedItem();
+          const price = selected?.price ?? 0;
+
+          self.updateBuyButtonLabel(price);
         }
       });
 
@@ -142,9 +192,12 @@ export default class InventoryUI {
       const show = !this.inventoryPanel.visible;
       this.setInventoryVisible(show);
 
-      const key = show ? "inventory_button1" : "inventory_button";
-      this.hotbarUI.inventoryButton.setTexture(key);
+      const selectedItem =
+        this.hotbarUI.getSelectedItem && this.hotbarUI.getSelectedItem();
+      const price = selectedItem?.price ?? 0;
+      this.updateBuyButtonLabel(price);
     });
+
   }
 
   getCellPosition(row, col) {
@@ -168,11 +221,13 @@ export default class InventoryUI {
       }
     }
 
-    const key = show ? "inventory_button1" : "inventory_button";
-    this.hotbarUI.inventoryButton.setTexture(key);
+    if (this.hotbarUI.setInventoryButtonActive) {
+      this.hotbarUI.setInventoryButtonActive(show);
+    }
 
     this.buyButton.setVisible(show);
   }
+
 
   setItems(items) {
     for (let i = 0; i < this.inventoryItems.length; i++) {
@@ -206,4 +261,19 @@ export default class InventoryUI {
   isOpen() {
     return this.inventoryPanel.visible;
   }
+
+
+  updateBuyButtonLabel(price) {
+    if (!this.buyPriceText || !this.buyLabelText) return;
+
+    if (!price || price <= 0) {
+      this.buyPriceText.setText("$ 0");
+      this.buyLabelText.setText("BUY");
+    } else {
+      this.buyPriceText.setText(`$ ${price}`);
+      this.buyLabelText.setText("BUY");
+    }
+  }
+
+
 }

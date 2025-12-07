@@ -73,6 +73,7 @@ equipFromInventory(icon) {
   }
 
   this.hotbarUI.selectSlot(emptyIndex);
+  this.hotbarUI.refreshCounts();
 }
 
 
