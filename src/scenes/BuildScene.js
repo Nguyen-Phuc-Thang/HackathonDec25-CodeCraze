@@ -18,6 +18,7 @@ export default class BuildScene extends Phaser.Scene {
     super("BuildScene");
     this.inventoryData = [];
     this.money = 0;
+    this.currentMapName = "default";
   }
 
   async loadInventoryFromDB() {
@@ -26,11 +27,13 @@ export default class BuildScene extends Phaser.Scene {
 
     if (!snap.exists()) {
       const defaultMap = this.blockBuildUI.getMapData();
-
       const newData = {
         inventory: [],
         money: 0,
-        map: defaultMap
+        maps: {
+          [this.currentMapName]: defaultMap
+        },
+        currentMap: this.currentMapName
       };
 
       try {
@@ -53,12 +56,42 @@ export default class BuildScene extends Phaser.Scene {
     this.inventoryUI.setItems(this.inventoryData);
     this.updateMoneyUI();
 
-    if (data.map) {
+    const maps = data.maps || null;
+    const currentMap = data.currentMap || null;
+
+    if (maps && currentMap && maps[currentMap]) {
+      this.currentMapName = currentMap;
+      this.blockBuildUI.loadMapData(maps[currentMap]);
+    } else if (maps) {
+      const keys = Object.keys(maps);
+      if (keys.length > 0) {
+        this.currentMapName = keys[0];
+        this.blockBuildUI.loadMapData(maps[keys[0]]);
+        try {
+          await updateDoc(userRef, { currentMap: this.currentMapName });
+        } catch (err) {
+          console.error("Failed to set currentMap:", err);
+        }
+      }
+    } else if (data.map) {
+      this.currentMapName = "default";
       this.blockBuildUI.loadMapData(data.map);
+      try {
+        await updateDoc(userRef, {
+          maps: { [this.currentMapName]: data.map },
+          currentMap: this.currentMapName
+        });
+      } catch (err) {
+        console.error("Failed to migrate map:", err);
+      }
     } else {
       const defaultMap = this.blockBuildUI.getMapData();
+      this.currentMapName = "default";
       try {
-        await updateDoc(userRef, { map: defaultMap });
+        await updateDoc(userRef, {
+          maps: { [this.currentMapName]: defaultMap },
+          currentMap: this.currentMapName
+        });
       } catch (err) {
         console.error("Failed to save default map:", err);
       }
@@ -83,6 +116,7 @@ export default class BuildScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor(0xaecbff);
     this.createMoneyUI();
+    this.createMapUI();
 
     if (this.input.mouse) {
       this.input.mouse.disableContextMenu();
@@ -113,10 +147,11 @@ export default class BuildScene extends Phaser.Scene {
           this.hotbarUI.refreshCounts();
 
           const userRef = doc(db, "users", this.userId);
+          const mapData = this.blockBuildUI.getMapData();
           try {
             await updateDoc(userRef, {
               inventory: this.inventoryData,
-              map: this.blockBuildUI.getMapData()
+              ["maps." + this.currentMapName]: mapData
             });
           } catch (err) {
             console.error("Failed to update inventory/map:", err);
@@ -126,9 +161,10 @@ export default class BuildScene extends Phaser.Scene {
         const removed = this.blockBuildUI.removeBlock(x, y);
         if (removed) {
           const userRef = doc(db, "users", this.userId);
+          const mapData = this.blockBuildUI.getMapData();
           try {
             await updateDoc(userRef, {
-              map: this.blockBuildUI.getMapData()
+              ["maps." + this.currentMapName]: mapData
             });
           } catch (err) {
             console.error("Failed to update map:", err);
@@ -183,5 +219,74 @@ export default class BuildScene extends Phaser.Scene {
     if (this.moneyText) {
       this.moneyText.setText(`$${this.money}`);
     }
+  }
+
+  createMapUI() {
+    const padding = 16;
+
+    this.newMapButton = this.add
+      .text(padding, padding, "New Map", {
+        fontFamily: "Arial",
+        fontSize: "18px",
+        color: "#ffffff",
+        backgroundColor: "#2ecc71"
+      })
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(1000);
+
+    this.loadMapButton = this.add
+      .text(padding, padding + 30, "Load Map", {
+        fontFamily: "Arial",
+        fontSize: "18px",
+        color: "#ffffff",
+        backgroundColor: "#3498db"
+      })
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(1000);
+
+    this.newMapButton.on("pointerdown", async () => {
+      const name = window.prompt("New map name:");
+      if (!name) return;
+
+      this.currentMapName = name;
+      this.blockBuildUI.resetToDefault();
+
+      const userRef = doc(db, "users", this.userId);
+      const mapData = this.blockBuildUI.getMapData();
+
+      try {
+        await updateDoc(userRef, {
+          ["maps." + name]: mapData,
+          currentMap: name
+        });
+      } catch (err) {
+        console.error("Failed to create new map:", err);
+      }
+    });
+
+    this.loadMapButton.on("pointerdown", async () => {
+      const name = window.prompt("Map name to load:");
+      if (!name) return;
+
+      const userRef = doc(db, "users", this.userId);
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) return;
+
+      const data = snap.data();
+      if (!data.maps || !data.maps[name]) return;
+
+      this.currentMapName = name;
+      this.blockBuildUI.loadMapData(data.maps[name]);
+
+      try {
+        await updateDoc(userRef, {
+          currentMap: name
+        });
+      } catch (err) {
+        console.error("Failed to set currentMap:", err);
+      }
+    });
   }
 }
