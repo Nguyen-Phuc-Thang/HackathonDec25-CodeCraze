@@ -11,7 +11,7 @@ export default class InventoryUI {
     const width = scene.scale.width;
     const height = scene.scale.height;
 
-    const barLeft = 10;
+  const barLeft = 10;
     const barBottom = 10;
     const barWidth = 5268;
     const barHeight = 636;

@@ -235,9 +235,9 @@ export default class BuildScene extends Phaser.Scene {
     const padding = 16;
 
     this.moneyText = this.add
-      .text(this.scale.width - padding, padding, `$${this.money}`, {
+      .text(padding + 80, padding, `$${this.money}`, {
         fontFamily: "Minecraft",
-        fontSize: "20px",
+        fontSize: "29px",
         color: "#ffffff",
         stroke: "#000000",
         strokeThickness: 3

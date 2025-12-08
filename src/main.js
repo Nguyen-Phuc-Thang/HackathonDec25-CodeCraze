@@ -18,7 +18,7 @@ const config = {
   dom: {
     createContainer: true,
   },
-  scene: [PomodoroScene, PreloadScene, BuildScene, LoginScene, SignUpScene],
+  scene: [LoginScene, PomodoroScene, PreloadScene, BuildScene, SignUpScene],
 };
 
 
