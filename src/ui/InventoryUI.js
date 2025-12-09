@@ -1,25 +1,17 @@
-export default class InventoryUI {  
-
-  
-    constructor(scene, itemSystem, hotbarUI) {
+export default class InventoryUI {
+  constructor(scene, itemSystem, hotbarUI) {
     this.scene = scene;
     this.itemSystem = itemSystem;
     this.hotbarUI = hotbarUI;
 
     this.uiStyle = {
-      baseColor: 0x2c3e50,
-      accentColor: 0x34495e,
-      hoverColor: 0x3498db,
-      textColor: '#ecf0f1',
-      successColor: 0x27ae60,
-      font: '16px "Minecraft"',
-      cornerRadius: 10
+      font: '16px "Minecraft"'
     };
 
     const width = scene.scale.width;
     const height = scene.scale.height;
 
-    const barLeft = 10;
+  const barLeft = 10;
     const barBottom = 10;
     const barWidth = 5268;
     const barHeight = 636;
@@ -56,9 +48,8 @@ export default class InventoryUI {
       this.invX + (this.invWidth * this.invScale) / 2 + 220;
     const buyY = this.hotbarUI.barY - this.hotbarUI.slotHeight - 50;
 
-    const buyWidth = 150;
-    const buyHeight = 100;
-    const buyRadius = 20;
+    this.buyWidth = 150;
+    this.buyHeight = 100;
 
     this.buyButton = scene.add
       .container(buyX, buyY)
@@ -66,31 +57,12 @@ export default class InventoryUI {
       .setVisible(false);
 
     const buyBg = scene.add.graphics();
-    buyBg.lineStyle(2, 0xffffff, 1);
-    buyBg.fillStyle(0x7f8c8d, 1);
-    buyBg.fillRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
-    buyBg.strokeRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
-
-    this.buyButton.on("pointerover", () => {
-      buyBg.clear();
-      buyBg.lineStyle(2, 0xffffff, 1);
-      buyBg.fillStyle(0x95a5a6, 1);
-      buyBg.fillRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
-      buyBg.strokeRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
-    });
-
-    this.buyButton.on("pointerout", () => {
-      buyBg.clear();
-      buyBg.lineStyle(2, 0xffffff, 1);
-      buyBg.fillStyle(0x7f8c8d, 1);
-      buyBg.fillRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
-      buyBg.strokeRoundedRect(-buyWidth / 2, -buyHeight / 2, buyWidth, buyHeight, buyRadius);
-    });
+    this.buyBg = buyBg;
 
     this.buyPriceText = scene.add
       .text(0, -8, "$ 0", {
         font: this.uiStyle.font,
-        color: "#ffffff"
+        color: "#303030"
       })
       .setOrigin(0.5)
       .setDepth(5);
@@ -98,15 +70,32 @@ export default class InventoryUI {
     this.buyLabelText = scene.add
       .text(0, 14, "BUY", {
         font: this.uiStyle.font,
-        color: "#ffffff"
+        color: "#303030"
       })
       .setOrigin(0.5)
       .setDepth(5);
 
     this.buyButton.add([buyBg, this.buyPriceText, this.buyLabelText]);
-    this.buyButton.setSize(buyWidth, buyHeight);
+    this.buyButton.setSize(this.buyWidth, this.buyHeight);
     this.buyButton.setInteractive({ useHandCursor: true });
-   // this.buyButton.setText("BUY");
+
+    this._redrawBuyButton("normal");
+
+    this.buyButton.on("pointerdown", () => {
+      this._redrawBuyButton("pressed");
+    });
+
+    this.buyButton.on("pointerup", () => {
+      this._redrawBuyButton("hover");
+    });
+
+    this.buyButton.on("pointerover", () => {
+      this._redrawBuyButton("hover");
+    });
+
+    this.buyButton.on("pointerout", () => {
+      this._redrawBuyButton("normal");
+    });
 
     const invRows = 3;
     const invCols = 14;
@@ -127,7 +116,6 @@ export default class InventoryUI {
     this.invTopScreen = invTopScreen;
 
     this.inventoryItems = [];
-
 
     const self = this;
 
@@ -207,7 +195,6 @@ export default class InventoryUI {
       const price = selectedItem?.price ?? 0;
       this.updateBuyButtonLabel(price);
     });
-
   }
 
   getCellPosition(row, col) {
@@ -237,7 +224,6 @@ export default class InventoryUI {
 
     this.buyButton.setVisible(show);
   }
-
 
   setItems(items) {
     for (let i = 0; i < this.inventoryItems.length; i++) {
@@ -272,7 +258,6 @@ export default class InventoryUI {
     return this.inventoryPanel.visible;
   }
 
-
   updateBuyButtonLabel(price) {
     if (!this.buyPriceText || !this.buyLabelText) return;
 
@@ -283,5 +268,38 @@ export default class InventoryUI {
       this.buyPriceText.setText(`$ ${price}`);
       this.buyLabelText.setText("BUY");
     }
+  }
+
+  _redrawBuyButton(state = "normal") {
+    if (!this.buyBg) return;
+
+    const g = this.buyBg;
+    const w = this.buyWidth;
+    const h = this.buyHeight;
+
+    const baseGrey = 0xc6c6c6;
+    const hoverGrey = 0xd8d8d8;
+    const pressGrey = 0xa8a8a8;
+    const outerBorder = 0x000000;
+    const innerBorder = 0x373737;
+
+    let fillColor = baseGrey;
+    if (state === "hover") fillColor = hoverGrey;
+    if (state === "pressed") fillColor = pressGrey;
+
+    g.clear();
+    g.fillStyle(outerBorder, 1);
+    g.fillRect(-w / 2, -h / 2, w, h);
+    g.fillStyle(innerBorder, 1);
+    g.fillRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2);
+    g.fillStyle(fillColor, 1);
+    g.fillRect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4);
+    g.fillStyle(0xffffff, 0.35);
+    g.fillRect(-w / 2 + 2, -h / 2 + 2, w - 4, 2);
+    g.fillStyle(0x000000, 0.35);
+    g.fillRect(-w / 2 + 2, h / 2 - 4, w - 4, 2);
+
+    this.buyPriceText.setColor("#303030");
+    this.buyLabelText.setColor("#303030");
   }
 }

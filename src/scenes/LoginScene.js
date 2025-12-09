@@ -6,6 +6,11 @@ export default class LoginScene extends Phaser.Scene {
     constructor() {
         super("LoginScene");
     }
+    
+    init(data) {
+        this.userId = data.userId;  
+    }
+
     preload() {}
 
     create() {
@@ -90,12 +95,14 @@ export default class LoginScene extends Phaser.Scene {
                     // Signed in
                     const user = userCredential.user;  
                     console.log("Login successful");
-                    this.scene.start("PomodoroScene");
+                    this.scene.start("PomodoroScene", { userId: user.uid });
                 })
                 .catch((error) => {
                     const errorCode = error.code;
                     const errorMessage = error.message;
-                    console.log(error);
+                    console.log(errorCode);
+                    console.log(errorMessage);
+                    console.log("Login failed");
                     this.scene.start("PomodoroScene");
                 });            
         });

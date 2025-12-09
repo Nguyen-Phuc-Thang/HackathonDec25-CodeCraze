@@ -9,7 +9,7 @@ export default class BlockBuildUI {
 
     this.cols = 25;
     this.minY = -3;
-    this.maxY = 9;
+    this.maxY = 8;
     this.rows = this.maxY - this.minY + 1;
 
     const cellWidth = width / this.cols;

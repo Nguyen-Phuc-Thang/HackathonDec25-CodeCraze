@@ -1,18 +1,42 @@
+import { db } from "../firebase/firebaseConfig.js";
+import {
+    doc,
+    getDoc,
+    onSnapshot,
+    updateDoc,
+    setDoc
+} from "firebase/firestore";
 
 import Phaser from "phaser";
 import { auth } from "../firebase/firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+
+const BLOCK_CATALOG = [
+    { type: "stone", price: 5 },
+    { type: "grass", price: 1 },
+    { type: "dirt", price: 1 },
+    { type: "sand", price: 2 },
+    { type: "oak_planks", price: 3 },
+    { type: "oak_wood", price: 4 },
+    { type: "bedrock", price: 100 },
+    { type: "obsidian", price: 50 },
+    { type: "bricks", price: 10 },
+    { type: "TNT", price: 20 }
+
+];
+
+
 export default class SignUpScene extends Phaser.Scene {
     constructor() {
         super("SignUpScene");
     }
-    preload() {}
+    preload() { }
 
     create() {
         const WIDTH = this.scale.width;
         const HEIGHT = this.scale.height;
         this.background = this.add.rectangle(-1, 0, this.scale.width, this.scale.height, "0xA9AAA9").setOrigin(0);
-        
+
         // Sign Up form
         const signupForm = this.add.dom(WIDTH / 2, HEIGHT / 2).createFromHTML(`
             <div style="
@@ -73,7 +97,7 @@ export default class SignUpScene extends Phaser.Scene {
                 ">Sign Up</button>
 
             </div>
-        `) 
+        `)
 
         // Add events to buttons
         const signupButton = signupForm.getChildByID('signupButton');
@@ -82,10 +106,11 @@ export default class SignUpScene extends Phaser.Scene {
             const passwordInput = signupForm.getChildByID('password');
             const email = emailInput.value;
             const password = passwordInput.value;
+
             await createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    // Signed in
                     const user = userCredential.user;
+                    this.createUserData(user.uid, user.email);
                     console.log("Account created successfully");
                     this.scene.start("LoginScene");
                 }).catch((error) => {
@@ -93,11 +118,27 @@ export default class SignUpScene extends Phaser.Scene {
                     const errorMessage = error.message;
                 });
         });
-        
+
 
     }
 
+    async createUserData(uid, email) {
+        console.log("Creating user data for:", uid);
+        const initialInventory = BLOCK_CATALOG.map(block => ({ type: block.type, count: 0 }));
+
+        await setDoc(doc(db, "users", uid), {
+            email,
+            money: 0,
+            inventory: initialInventory,
+            maps: {
+                default: []
+            }
+        });
+
+        console.log("User data created for:", uid);
+    }
+
     update() {
-        
+
     }
 }

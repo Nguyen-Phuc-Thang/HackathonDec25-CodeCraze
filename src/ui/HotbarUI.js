@@ -1,8 +1,6 @@
 export default class HotbarUI {
 
-  preload() {
-
-  }
+  preload() {}
 
   constructor(scene, itemSystem) {
     this.scene = scene;
@@ -101,11 +99,11 @@ export default class HotbarUI {
 
     this.modeBtnWidth = 120;
     this.modeBtnHeight = 40;
-    this.modeBtnRadius = 10;
+    this.modeBtnRadius = 0;
 
     this.inventoryBtnWidth = 160;
     this.inventoryBtnHeight = 40;
-    this.inventoryBtnRadius = 10;
+    this.inventoryBtnRadius = 0;
 
     this.isBuildMode = true;
     this.currentTool = "build";
@@ -120,7 +118,7 @@ export default class HotbarUI {
     this.buildModeLabel = scene.add
       .text(0, 0, "BUILD", {
         font: '16px "Minecraft"',
-        color: "#ffffff"
+        color: "#303030"
       })
       .setOrigin(0.5);
 
@@ -128,25 +126,24 @@ export default class HotbarUI {
     this.buildModeButton.setSize(this.modeBtnWidth, this.modeBtnHeight);
     this.buildModeButton.setInteractive({ useHandCursor: true });
 
-    this._redrawBuildModeButton();
+    this._redrawBuildModeButton("normal");
 
     this.buildModeButton.on("pointerdown", () => {
       this.isBuildMode = !this.isBuildMode;
       this.currentTool = this.isBuildMode ? "build" : "remove";
-      this._redrawBuildModeButton();
+      this._redrawBuildModeButton("pressed");
+    });
+
+    this.buildModeButton.on("pointerup", () => {
+      this._redrawBuildModeButton("hover");
     });
 
     this.buildModeButton.on("pointerover", () => {
-      buildBg.clear();
-      buildBg.lineStyle(2, 0xffffff, 1);
-      const color = this.isBuildMode ? 0x27ae60 : 0xc0392b;
-      buildBg.fillStyle(color + 0x202020, 1);
-      buildBg.fillRoundedRect(-this.modeBtnWidth / 2, -this.modeBtnHeight / 2, this.modeBtnWidth, this.modeBtnHeight, this.modeBtnRadius);
-      buildBg.strokeRoundedRect(-this.modeBtnWidth / 2, -this.modeBtnHeight / 2, this.modeBtnWidth, this.modeBtnHeight, this.modeBtnRadius);
+      this._redrawBuildModeButton("hover");
     });
 
     this.buildModeButton.on("pointerout", () => {
-      this._redrawBuildModeButton();
+      this._redrawBuildModeButton("normal");
     });
 
     const inventoryBtnX = firstBtnX + this.inventoryBtnWidth + gap + 40;
@@ -155,85 +152,110 @@ export default class HotbarUI {
       .container(inventoryBtnX, btnY)
       .setDepth(2);
 
-    this.inventoryButton.on("pointerover", () => {
-      invBg.clear();
-      invBg.lineStyle(2, 0xffffff, 1);
-      invBg.fillStyle(0x95a5a6, 1);
-      invBg.fillRoundedRect(-this.inventoryBtnWidth / 2, -this.inventoryBtnHeight / 2, this.inventoryBtnWidth, this.inventoryBtnHeight, this.inventoryBtnRadius);
-      invBg.strokeRoundedRect(-this.inventoryBtnWidth / 2, -this.inventoryBtnHeight / 2, this.inventoryBtnWidth, this.inventoryBtnHeight, this.inventoryBtnRadius);
-    });
-
-    this.inventoryButton.on("pointerout", () => {
-      invBg.clear();
-      invBg.lineStyle(2, 0xffffff, 1);
-      invBg.fillStyle(0x7f8c8d, 1);
-      invBg.fillRoundedRect(-this.inventoryBtnWidth / 2, -this.inventoryBtnHeight / 2, this.inventoryBtnWidth, this.inventoryBtnHeight, this.inventoryBtnRadius);
-      invBg.strokeRoundedRect(-this.inventoryBtnWidth / 2, -this.inventoryBtnHeight / 2, this.inventoryBtnWidth, this.inventoryBtnHeight, this.inventoryBtnRadius);
-    });
-
     const invBg = scene.add.graphics();
     this.inventoryBg = invBg;
 
     this.inventoryLabel = scene.add
       .text(0, 0, "INVENTORY", {
-        fontFamily: 'Minecraft',
-        fontSize: '16px',
-        color: "#ffffff"
+        font: '16px "Minecraft"',
+        color: "#303030"
       })
       .setOrigin(0.5);
-    
+
     this.inventoryButton.add([invBg, this.inventoryLabel]);
     this.inventoryButton.setSize(this.inventoryBtnWidth, this.inventoryBtnHeight);
     this.inventoryButton.setInteractive({ useHandCursor: true });
 
-    this._redrawInventoryButton(false, "INVENTORY");
+    this._redrawInventoryButton("normal", "INVENTORY");
 
+    this.inventoryButton.on("pointerdown", () => {
+      this._redrawInventoryButton("pressed", "INVENTORY");
+    });
+
+    this.inventoryButton.on("pointerup", () => {
+      this._redrawInventoryButton("hover", "INVENTORY");
+    });
+
+    this.inventoryButton.on("pointerover", () => {
+      this._redrawInventoryButton("hover", "INVENTORY");
+    });
+
+    this.inventoryButton.on("pointerout", () => {
+      this._redrawInventoryButton("normal", "INVENTORY");
+    });
 
     this.selectSlot(0);
   }
 
-  _redrawBuildModeButton() {
+  _redrawBuildModeButton(state = "normal") {
     if (!this.buildModeBg) return;
 
     const g = this.buildModeBg;
     const w = this.modeBtnWidth;
     const h = this.modeBtnHeight;
-    const r = this.modeBtnRadius;
 
-    const color = this.isBuildMode ? 0x2ecc71 : 0xe74c3c;
+    const baseGrey = 0xc6c6c6;
+    const hoverGrey = 0xd8d8d8;
+    const pressGrey = 0xa8a8a8;
+    const outerBorder = 0x000000;
+    const innerBorder = 0x373737;
+
+    let fillColor = baseGrey;
+    if (state === "hover") fillColor = hoverGrey;
+    if (state === "pressed") fillColor = pressGrey;
 
     g.clear();
-    g.lineStyle(2, 0xffffff, 1);
-    g.fillStyle(color, 1);
-    g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
-    g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+    g.fillStyle(outerBorder, 1);
+    g.fillRect(-w / 2, -h / 2, w, h);
+    g.fillStyle(innerBorder, 1);
+    g.fillRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2);
+    g.fillStyle(fillColor, 1);
+    g.fillRect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4);
+    g.fillStyle(0xffffff, 0.35);
+    g.fillRect(-w / 2 + 2, -h / 2 + 2, w - 4, 2);
+    g.fillStyle(0x000000, 0.35);
+    g.fillRect(-w / 2 + 2, h / 2 - 4, w - 4, 2);
 
     this.buildModeLabel.setText(this.isBuildMode ? "BUILD" : "REMOVE");
+    this.buildModeLabel.setColor("#303030");
   }
 
-  _redrawInventoryButton(active, inventoryText) {
+  _redrawInventoryButton(state = "normal", inventoryText = "INVENTORY") {
     if (!this.inventoryBg) return;
 
     const g = this.inventoryBg;
     const w = this.inventoryBtnWidth;
     const h = this.inventoryBtnHeight;
-    const r = this.inventoryBtnRadius;
 
-    const bgColor = active ? 0x95a5a6 : 0x7f8c8d;
+    const baseGrey = 0xc6c6c6;
+    const hoverGrey = 0xd8d8d8;
+    const pressGrey = 0xa8a8a8;
+    const outerBorder = 0x000000;
+    const innerBorder = 0x373737;
+
+    let fillColor = baseGrey;
+    if (state === "hover") fillColor = hoverGrey;
+    if (state === "pressed") fillColor = pressGrey;
 
     g.clear();
-    g.lineStyle(2, 0xffffff, 1);
-    g.fillStyle(bgColor, 1);
-    g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
-    g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+    g.fillStyle(outerBorder, 1);
+    g.fillRect(-w / 2, -h / 2, w, h);
+    g.fillStyle(innerBorder, 1);
+    g.fillRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2);
+    g.fillStyle(fillColor, 1);
+    g.fillRect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4);
+    g.fillStyle(0xffffff, 0.35);
+    g.fillRect(-w / 2 + 2, -h / 2 + 2, w - 4, 2);
+    g.fillStyle(0x000000, 0.35);
+    g.fillRect(-w / 2 + 2, h / 2 - 4, w - 4, 2);
 
     this.inventoryLabel.setText(inventoryText);
+    this.inventoryLabel.setColor("#303030");
   }
 
   setInventoryButtonActive(active) {
-    this._redrawInventoryButton(active, "INVENTORY");
+    this._redrawInventoryButton(active ? "pressed" : "normal", "INVENTORY");
   }
-
 
   selectSlot(index) {
     const n = this.numSlots;
@@ -310,7 +332,5 @@ export default class HotbarUI {
     }
   }
 
-  create() {
-    
-  }
+  create() {}
 }

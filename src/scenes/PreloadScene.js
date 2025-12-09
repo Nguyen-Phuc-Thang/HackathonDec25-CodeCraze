@@ -8,8 +8,6 @@ export default class PreloadScene extends Phaser.Scene {
   preload() {
     this.load.image("slot_bar", "assets/ui/hotbar/slot_bar.png");
     this.load.image("build_button1", "assets/ui/hotbar/build_button1.png");
-    this.load.image("build_button2", "assets/ui/hotbar/build_button2.png");
-    this.load.image("build_button3", "assets/ui/hotbar/build_button3.png");
     this.load.image("build_button4", "assets/ui/hotbar/build_button4.png");
     this.load.image("inventory_button", "assets/ui/hotbar/inventory_button.png");
     this.load.image("inventory_button1", "assets/ui/hotbar/inventory_button1.png");
@@ -27,6 +25,12 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image("sand", "assets/blocks/sand.png");
     this.load.image("TNT", "assets/blocks/TNT.png");
     this.load.font('Minecraft', 'assets/fonts/Minecraft.ttf');
+    this.load.image("pomodoroMode", "assets/ui/pomodoro_mode.png");
+    this.load.image("buildMode", "assets/ui/build_mode.png");
+  }
+
+  init(data) {
+    this.userId = data.userId;
   }
 
   create() {
@@ -40,6 +44,6 @@ export default class PreloadScene extends Phaser.Scene {
       this.inventoryUI.setItems(inv);
     }
     const userId = "demoUser";
-    this.scene.start("BuildScene", { userId });
+    this.scene.start("BuildScene", { userId: this.userId });
   }
 }
