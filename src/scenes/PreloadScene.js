@@ -29,6 +29,10 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image("buildMode", "assets/ui/build_mode.png");
   }
 
+  init(data) {
+    this.userId = data.userId;
+  }
+
   create() {
 
     async function loadInventoryFromDB() {
@@ -40,6 +44,6 @@ export default class PreloadScene extends Phaser.Scene {
       this.inventoryUI.setItems(inv);
     }
     const userId = "demoUser";
-    this.scene.start("BuildScene", { userId });
+    this.scene.start("BuildScene", { userId: this.userId });
   }
 }

@@ -257,7 +257,7 @@ export default class PomodoroScene extends Phaser.Scene {
         //Switch mode 
         const switchButton = this.add.sprite(WIDTH / 2, 35, "pomodoroMode").setOrigin(0.5).setScale(3).setInteractive();
         switchButton.on('pointerdown', () => {
-            this.scene.start("PreloadScene");
+            this.scene.start("PreloadScene", { userId: this.userId });
         });
 
         this.loadUserData();

@@ -25,6 +25,7 @@ export default class BuildScene extends Phaser.Scene {
 
   async loadInventoryFromDB() {
     const userRef = doc(db, "users", this.userId);
+    console.log("Loading inventory for user:", this.userId);
     const snap = await getDoc(userRef);
 
     if (!snap.exists()) {
@@ -227,7 +228,7 @@ export default class BuildScene extends Phaser.Scene {
 
     const switchButton = this.add.sprite(this.scale.width / 2, 35, "buildMode").setOrigin(0.5).setScale(3).setInteractive();
     switchButton.on('pointerdown', () => {
-        this.scene.start("PomodoroScene");
+        this.scene.start("PomodoroScene", { userId: this.userId });
     });
   }
 
