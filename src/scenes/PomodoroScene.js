@@ -14,7 +14,7 @@ export default class PomodoroScene extends Phaser.Scene {
     }
 
     init(data) {
-        this.userId = data.userId;  
+        this.userId = data.userId;
         console.log("userId in PomodoroScene:", this.userId);
     }
 
@@ -261,6 +261,7 @@ export default class PomodoroScene extends Phaser.Scene {
         });
 
         this.loadUserData();
+        this.events.on("wake", this.loadUserData, this);
     }
 
     update(time, delta) {
@@ -271,7 +272,6 @@ export default class PomodoroScene extends Phaser.Scene {
             if (this.remainingFocusSeconds > 0) {
                 this.remainingFocusSeconds -= delta / 1000;
                 if (this.rewardCheckpoint - this.remainingFocusSeconds >= 10) {
-                    console.log("Rewarding user 1 coin");
                     this.rewardCheckpoint -= 10;
                     this.rewardUserRealtime();
                 }
@@ -335,19 +335,35 @@ export default class PomodoroScene extends Phaser.Scene {
         this.coinAmountText.setText(String(this.coinAmount));
     }
 
-    async rewardUserRealtime() {
-        this.coinAmount += 1;
-        this.coinAmountText.setText(String(this.coinAmount));
 
+    async rewardUserRealtime() {
         if (!this.userId) return;
 
         const userRef = doc(db, "users", this.userId);
+
         try {
+            const snap = await getDoc(userRef);
+
+            if (!snap.exists()) {
+                console.warn("User document missing:", this.userId);
+                return;
+            }
+
+            const data = snap.data();
+            const currentMoney = data.money || 0;
+
+            const newMoney = currentMoney + 1;
+
+            this.coinAmount = newMoney;
+            this.coinAmountText.setText(String(newMoney));
+
             await updateDoc(userRef, {
-                money: this.coinAmount
+                money: newMoney
             });
+
         } catch (err) {
             console.error("Failed to update money:", err);
         }
     }
+
 }   

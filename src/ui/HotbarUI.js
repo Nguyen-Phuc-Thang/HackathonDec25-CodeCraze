@@ -66,14 +66,19 @@ export default class HotbarUI {
         .setInteractive();
 
       zone.slotIndex = i;
-      zone.on("pointerdown", () => {
-        this.selectSlot(zone.slotIndex);
-        this.itemSystem.handleHotbarClick(zone.slotIndex);
+      zone.on("pointerdown", (pointer) => {
+        if (pointer.leftButtonDown()) {
+          this.selectSlot(zone.slotIndex);
+          this.itemSystem.handleHotbarClick(zone.slotIndex);
 
-        const selectedItem = this.getSelectedItem();
-        const price = selectedItem?.price ?? 0;
+          const selectedItem = this.getSelectedItem();
+          const price = selectedItem?.price ?? 0;
 
-        this.scene.inventoryUI.updateBuyButtonLabel(price);
+          this.scene.inventoryUI.updateBuyButtonLabel(price);
+        } else {
+          this.itemSystem.unequipHotbarItem(zone.slotIndex);
+        }
+        this.refreshCounts();
       });
 
       this.hotbarSlots.push(zone);
@@ -301,6 +306,8 @@ export default class HotbarUI {
       const item = this.storedItems[i];
       const slot = this.hotbarSlots[i];
       let textObj = this.hotbarCountTexts[i];
+
+      console.log("Refreshing hotbar slot", i, "with item:", item);
 
       if (item && item.count > 0) {
         const textX = slot.x + this.slotWidth / 2 - 4;
