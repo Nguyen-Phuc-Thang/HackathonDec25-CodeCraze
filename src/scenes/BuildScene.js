@@ -85,7 +85,7 @@ export default class BuildScene extends Phaser.Scene {
           maps,
           currentMap: this.currentMapName
         });
-      } catch (err) { 
+      } catch (err) {
         console.error(err);
       }
     }
@@ -127,14 +127,16 @@ export default class BuildScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor(0xaecbff);
 
+    this.createTopBarUI();
+
     this.uiStyle = {
-      baseColor: 0x707070,       
-      accentColor: 0x4f4f4f,       
-      hoverColor: 0x8b8b8b,       
-      selectedColor: 0x006400,      
-      textColor: "#f5f5f5",       
-      mutedTextColor: "#d0d0d0",  
-      successColor: 0x00aa00,       
+      baseColor: 0x707070,
+      accentColor: 0x4f4f4f,
+      hoverColor: 0x8b8b8b,
+      selectedColor: 0x006400,
+      textColor: "#f5f5f5",
+      mutedTextColor: "#d0d0d0",
+      successColor: 0x00aa00,
       font: "16px Minecraft",
       cornerRadius: 4
     };
@@ -228,31 +230,10 @@ export default class BuildScene extends Phaser.Scene {
 
     const switchButton = this.add.sprite(this.scale.width / 2, 35, "buildMode").setOrigin(0.5).setScale(3).setInteractive();
     switchButton.on('pointerdown', () => {
-        this.scene.switch("PomodoroScene", { userId: this.userId });
+      this.scene.switch("PomodoroScene", { userId: this.userId });
     });
   }
 
-  createMoneyUI() {
-    const padding = 16;
-
-    this.moneyText = this.add
-      .text(padding + 80, padding, `$${this.money}`, {
-        fontFamily: "Minecraft",
-        fontSize: "29px",
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 3
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(1000);
-  }
-
-  updateMoneyUI() {
-    if (this.moneyText) {
-      this.moneyText.setText(`$${this.money}`);
-    }
-  }
 
   createMapUI() {
     const padding = 16;
@@ -506,4 +487,83 @@ export default class BuildScene extends Phaser.Scene {
       });
     });
   }
+
+  createTopBarUI() {
+    const width = this.scale.width;
+    const barHeight = 80;
+
+    const g = this.add.graphics().setDepth(0);
+
+    const outerBorder = 0x000000;
+    const innerBorder = 0x4a6b4a;
+    const fillColor = 0xc8facc;
+
+    g.fillStyle(outerBorder, 1);
+    g.fillRect(0, 0, width, barHeight);
+
+    g.fillStyle(innerBorder, 1);
+    g.fillRect(0, 1, width, barHeight - 2);
+
+    g.fillStyle(fillColor, 1);
+    g.fillRect(2, 3, width - 4, barHeight - 6);
+  }
+
+  createMoneyUI() {
+    const x = 80;
+    const y = 40;
+
+    const boxHeight = 30;
+    const symbolWidth = 40;
+    const valueWidth = 80;
+
+    const outerBorder = 0x000000;
+    const innerBorder = 0x373737;
+    const fillColor = 0xc6c6c6;
+
+    this.moneyContainer = this.add.container(x, y).setDepth(1000);
+
+    const leftG = this.add.graphics();
+    leftG.fillStyle(outerBorder, 1);
+    leftG.fillRect(0, -boxHeight / 2, symbolWidth, boxHeight);
+    leftG.fillStyle(innerBorder, 1);
+    leftG.fillRect(1, -boxHeight / 2 + 1, symbolWidth - 2, boxHeight - 2);
+    leftG.fillStyle(fillColor, 1);
+    leftG.fillRect(2, -boxHeight / 2 + 2, symbolWidth - 4, boxHeight - 4);
+    this.moneyContainer.add(leftG);
+
+    const rightG = this.add.graphics();
+    rightG.fillStyle(outerBorder, 1);
+    rightG.fillRect(symbolWidth + 4, -boxHeight / 2, valueWidth, boxHeight);
+    rightG.fillStyle(innerBorder, 1);
+    rightG.fillRect(symbolWidth + 5, -boxHeight / 2 + 1, valueWidth - 2, boxHeight - 2);
+    rightG.fillStyle(fillColor, 1);
+    rightG.fillRect(symbolWidth + 6, -boxHeight / 2 + 2, valueWidth - 4, boxHeight - 4);
+    this.moneyContainer.add(rightG);
+
+    this.moneySymbolText = this.add
+      .text(symbolWidth / 2, 0, "$", {
+        fontFamily: "Minecraft",
+        fontSize: "18px",
+        color: "#303030"
+      })
+      .setOrigin(0.5);
+    this.moneyContainer.add(this.moneySymbolText);
+
+    this.moneyValueText = this.add
+      .text(symbolWidth + 4 + valueWidth / 2, 0, String(this.money), {
+        fontFamily: "Minecraft",
+        fontSize: "18px",
+        color: "#303030"
+      })
+      .setOrigin(0.5);
+    this.moneyContainer.add(this.moneyValueText);
+  }
+
+  updateMoneyUI() {
+    if (this.moneyValueText) {
+      this.moneyValueText.setText(String(this.money));
+    }
+  }
+
+
 }
